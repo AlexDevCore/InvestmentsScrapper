@@ -1,0 +1,4 @@
+raw/**/*.csv
+!raw/fundrise/manual.example.csv
+__pycache__/
+*.pyc
