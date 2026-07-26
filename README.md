@@ -1,4 +1,4 @@
-# InvestmentsScrapper — v0.0
+# InvestmentsScraper — v0.0
 
 Нормализует CSV-выгрузки с брокерских платформ в единую таблицу и генерирует
 markdown-заметки по позициям в Obsidian-vault "AI Brain"
