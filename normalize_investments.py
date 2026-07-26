@@ -21,6 +21,7 @@
 """
 
 import csv
+import os
 import re
 import sys
 from datetime import date
@@ -30,7 +31,8 @@ import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 RAW = HERE / "raw"
-POSITIONS_DIR = Path(r"A:\Obsidian\AI Brain\07_Финансы и активы\Позиции")
+# Use POSITIONS_DIR environment variable, or default to ./positions if not set
+POSITIONS_DIR = Path(os.getenv("POSITIONS_DIR", HERE / "positions"))
 OUT_CSV = RAW / "normalized_transactions.csv"
 
 NORMALIZED_COLUMNS = [
