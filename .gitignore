@@ -3,3 +3,6 @@ raw/**/*.csv
 __pycache__/
 *.pyc
 .env
+
+# local editor/agent settings
+.claude/
