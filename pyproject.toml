@@ -1,0 +1,15 @@
+[project]
+name = "investments-scraper"
+version = "0.2.0"
+description = "Normalizes brokerage CSV exports from six platforms into one transaction table"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = ["pandas>=2.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,61 +1,69 @@
-# InvestmentsScraper — v0.0
+# InvestmentsScraper
 
-Нормализует CSV-выгрузки с брокерских платформ в единую таблицу и генерирует
-markdown-заметки по позициям в Obsidian-vault (папка `Позиции/`).
+[![tests](https://github.com/AlexDevCore/InvestmentsScraper/actions/workflows/tests.yml/badge.svg)](https://github.com/AlexDevCore/InvestmentsScraper/actions/workflows/tests.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> Репозиторий публичный. Все `raw/**/*.csv` (реальные брокерские выгрузки) в
-> `.gitignore` и не попадают в коммиты — трекается только пустой
-> `manual.example.csv`.
+Six brokerages export their transaction history six different ways, and none of them agree on a format. This normalizes all of them into one transaction table and generates a per-position markdown note for an Obsidian vault.
 
-## Настройка
+Supported: **Robinhood · Fidelity · Charles Schwab · Webull · Computershare · Fundrise**
 
-Куда писать заметки задаётся переменной окружения `POSITIONS_DIR` (без неё —
-пишет в `./positions` рядом со скриптом). Например в PowerShell:
-```powershell
-$env:POSITIONS_DIR = "путь\к\вашему\vault\07_Финансы и активы\Позиции"
+> This repository is public. Every `raw/**/*.csv` — the real brokerage exports — is in `.gitignore` and never reaches a commit. Only an empty `manual.example.csv` is tracked.
+
+## Usage
+
+Drop exports into `raw/<platform>/`, then run:
+
+```bash
+pip install -e .
 python normalize_investments.py
 ```
 
-## Куда класть сырые выгрузки
+Output: a combined `normalized_transactions.csv` plus one markdown note per position.
 
-Клади CSV в `raw/<platform>/`, затем запускай `python normalize_investments.py`.
+Where the notes are written is set by `POSITIONS_DIR`; without it they land in `./positions` next to the script.
 
-## Robinhood
-Account → Reports and Statements → задать диапазон дат → Generate Report →
-Download CSV (готовится до 24ч). Файл(ы) → `robinhood/`.
-
-## Fidelity
-Activity & Orders → экспорт. Выгружается по 90 дней за раз — если истории
-больше, скачай несколько файлов и положи все в `fidelity/`.
-Учти: cost basis по проданным позициям в этом отчёте не указан — для точного
-P&L дополнительно понадобится отчёт Realized Gain/Loss (не обязательно для
-разовой сверки позиций).
-
-## Charles Schwab
-Accounts → History → выбрать счёт/период → Export → CSV.
-Лимит 1500 строк на файл — при большой истории выгружай по периодам,
-все файлы в `schwab/`.
-
-## Webull
-В приложении/на сайте: Account → Statements/History → экспорт. Формат заранее
-не проверен — положи файл в `webull/` и запусти скрипт; если он не распознает
-колонки, выведет реальные заголовки и её надо будет поправить в `COLUMN_MAP`
-скрипта (или сообщи мне — поправлю).
-
-## Fundrise
-Нормального CSV-экспорта транзакций нет, только PDF-выписки (Documents →
-Statements). Скопируй `fundrise/manual.example.csv` → `fundrise/manual.csv`
-и вручную заполни по шаблону (колонки: date, ticker, action, quantity, price,
-amount, notes). `manual.csv` с реальными данными в `.gitignore` — в репозиторий
-не попадёт, только пустой example.
-
-## Computershare
-Investor Center → Activity → экспорт в CSV. Положи в `computershare/`.
-Если колонки не совпадут — так же выведет реальные заголовки.
-
-## Если формат не подошёл
+```powershell
+$env:POSITIONS_DIR = "C:\path\to\your\vault\Positions"
+python normalize_investments.py
 ```
-python normalize_investments.py --inspect <platform> <файл.csv>
+
+## When a broker changes its export format
+
+```bash
+python normalize_investments.py --inspect <platform> <file.csv>
 ```
-Покажет реальные заголовки CSV — дальше просто правим словарь `COLUMN_MAP`
-в начале скрипта под них, логику трогать не нужно.
+
+This prints the CSV's actual headers. Map them in `COLUMN_MAP` at the top of the script — the parsing logic itself does not change. That is the point of the design: a new or altered export is a dictionary entry, not a rewrite.
+
+The loader also copes with two things that break a naive `read_csv` call: an export whose real header sits several lines below a preamble (Schwab does this), and a UTF-8 BOM on Windows exports that otherwise ends up glued to the first column name.
+
+## Getting the exports
+
+**Robinhood** — Account → Reports and Statements → set a date range → Generate Report → Download CSV. The report can take up to 24 hours to prepare. Files go in `raw/robinhood/`.
+
+**Fidelity** — Activity & Orders → export. Limited to 90 days per file, so a longer history means several files; put them all in `raw/fidelity/`. Note that this report omits cost basis for sold positions — exact P&L needs the separate Realized Gain/Loss report, which is not required for a position reconciliation.
+
+**Charles Schwab** — Accounts → History → pick account and period → Export → CSV. Capped at 1500 rows per file; split a long history by period and drop every file into `raw/schwab/`.
+
+**Webull** — Account → Statements/History → export. If the column names do not match, run `--inspect` and add them to `COLUMN_MAP`.
+
+**Computershare** — Investor Center → Activity → export to CSV, into `raw/computershare/`.
+
+**Fundrise** — no transaction CSV export exists, only PDF statements (Documents → Statements). Copy `raw/fundrise/manual.example.csv` to `manual.csv` and fill it in by hand: `date, ticker, action, quantity, price, amount, notes`. The filled `manual.csv` is gitignored.
+
+## Tests
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+20 tests covering action classification — a reinvested dividend must not be counted twice, as both a dividend and a purchase — and header detection underneath an export preamble.
+
+## Requirements
+
+Python 3.10+ · pandas
+
+## License
+
+MIT — see [LICENSE](LICENSE).
